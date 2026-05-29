@@ -1,16 +1,17 @@
 # Pride Plugin Setup Guide
 
-The Pride plugin renders Pride flags as full-screen color art and surfaces a small set of LGBTQ+ history facts. This guide walks through configuration on both the flagship (6×22) and note (3×15) displays.
+The Pride plugin renders Pride flags, color patterns, hearts, and an LGBTQ+ history banner as full-screen color art. This guide walks through configuration, the four selection modes, and pool filtering.
 
 ## Overview
 
 **What it does:**
 
-- Renders one of 12 Pride flags filling the entire board
-- Optionally cycles through every flag on a deterministic interval
-- Overlays a 22-character custom message centered on the active flag
-- Switches into an "On This Day" mode that surfaces a year + event for today
-- Works on both the flagship and note display sizes
+- Renders 21 art pieces: 12 flags, 3 vertical-stripe variants, 4 patterns (including a slowly-evolving "alive" sparkle), 1 rainbow heart, 1 equality symbol
+- Picks pieces explicitly, on a rotation timer, deterministically per day, or randomly
+- Optionally restricts the candidate pool to flags / patterns / hearts / symbols
+- Overlays a 22-character message centered on the active piece
+- Surfaces an "On This Day" LGBTQ+ history fact when in history mode
+- Publishes both flagship (6×22) and note (3×15) renders every fetch, as separate template variables — no device setting required
 
 **Prerequisites:**
 
@@ -26,53 +27,81 @@ The Pride plugin renders Pride flags as full-screen color art and surfaces a sma
 1. Open the **Integrations** page.
 2. Find the **Pride** card.
 3. Toggle **Enabled** on.
-4. Pick a **Mode** (`flag` or `history`).
-5. Pick a **Flag** (or leave at `rotate` to cycle them all).
-6. Save.
+4. Pick a **Mode** (`art` or `history`).
+5. Pick a **Selection** (`pick`, `rotate`, `daily`, `random`).
+6. If selection is `pick`, choose a **Piece**.
+7. Save.
 
 **Via Environment Variables:**
 
 ```bash
 PRIDE_ENABLED=true
-PRIDE_MODE=flag
-PRIDE_FLAG=rotate
-PRIDE_DEVICE_TYPE=flagship
+PRIDE_MODE=art
+PRIDE_SELECTION=rotate
+PRIDE_PIECE=rainbow
 PRIDE_ROTATE_SECONDS=600
 PRIDE_MESSAGE=""
 PRIDE_REFRESH_SECONDS=300
 ```
 
-### 2. Choose a Flag
+### 2. Choose a Piece (or let the plugin choose)
 
-| Flag ID | Display name |
-|---------|--------------|
-| `rainbow` | Rainbow |
-| `trans` | Trans |
-| `bi` | Bisexual |
-| `pan` | Pansexual |
-| `lesbian` | Lesbian |
-| `ace` | Asexual |
-| `nonbinary` | Non-binary |
-| `progress` | Progress (chevron lands in v0.2) |
-| `intersex` | Intersex (ring lands in v0.2) |
-| `leather` | Leather |
-| `polyamory` | Polyamory |
-| `genderfluid` | Genderfluid |
-| `rotate` | Cycle through every flag |
+| Piece ID | Display name | Category |
+|---------|--------------|----------|
+| `rainbow` | Rainbow | flag |
+| `trans` | Trans | flag |
+| `bi` | Bisexual | flag |
+| `pan` | Pansexual | flag |
+| `lesbian` | Lesbian | flag |
+| `ace` | Asexual | flag |
+| `nonbinary` | Non-binary | flag |
+| `progress` | Progress | flag |
+| `intersex` | Intersex | flag |
+| `leather` | Leather | flag |
+| `polyamory` | Polyamory | flag |
+| `genderfluid` | Genderfluid | flag |
+| `rainbow_columns` | Rainbow Columns | pattern |
+| `trans_columns` | Trans Columns | pattern |
+| `bi_columns` | Bi Columns | pattern |
+| `rainbow_diagonal` | Rainbow Diagonal | pattern |
+| `rainbow_checker` | Rainbow Checker | pattern |
+| `rainbow_arc` | Rainbow Arc | pattern |
+| `rainbow_sparkle` | Rainbow Sparkle | pattern |
+| `rainbow_heart` | Rainbow Heart | heart |
+| `equality` | Equality | symbol |
 
-When `flag` is set to `rotate`, the plugin picks based on the current time: `(time.time() // rotate_seconds) % 12`. That is fully deterministic — no state to persist, no surprises across restarts.
+### 3. Pick a Selection Mode
 
-### 3. (Optional) Add a Custom Message
+- **`pick`** — render the exact piece you chose. No timer.
+- **`rotate`** — cycle through the pool every `rotate_seconds`. Deterministic from the wall clock — same time, same piece, no extra state.
+- **`daily`** — hash today's date into a piece. Same piece all day, different piece tomorrow.
+- **`random`** — re-roll each fetch.
 
-Set `message` to any string up to 22 characters. It will be uppercased and centered on the middle row of the active flag.
+### 4. Filter the Pool (Optional)
 
-Examples:
+The `pool` setting is a list of categories (`flag`, `pattern`, `heart`, `symbol`) and applies to rotate/daily/random. Examples:
 
-- `HAPPY PRIDE 2026`
-- `LOVE IS LOVE`
-- `MARRY ME ALEX`
+- `["flag"]` — only the 12 stripe flags rotate
+- `["pattern"]` — only color patterns (great if you want abstract art only)
+- `["heart", "symbol"]` — only the heart and equality sign
+- `[]` (empty) — every piece is in the pool
 
-### 4. (Optional) Switch to History Mode
+### 5. The Alive Rainbow Sparkle
+
+`rainbow_sparkle` is special: at any moment, the visible state is the most recent ~26 mutations (≈ tile density). Each mutation is derived from a frame number `frame = wall_clock // 30`, so:
+
+- One tile changes per 30 seconds
+- Old sparkles slowly fade off as new ones appear
+- Two boards in the same room stay perfectly in sync
+- Restarting the plugin doesn't reset the pattern — it picks up wherever the clock is
+
+To see it evolve smoothly, set `refresh_seconds` to `30` (the minimum the manifest allows). At the default `300` the sparkle will jump by 10 mutations between refreshes — still pretty, but less alive.
+
+### 6. (Optional) Add a Custom Message
+
+Set `message` to any string up to 22 characters. It's uppercased and centered on the middle row of whichever piece is active.
+
+### 7. (Optional) Switch to History Mode
 
 Set `mode = history`. The plugin will:
 
@@ -82,32 +111,17 @@ Set `mode = history`. The plugin will:
 
 History mode also exposes `{{pride.history_year}}` and `{{pride.history_text}}` so you can compose your own layouts in other templates.
 
-### 5. Pick a Device Type
-
-The plugin supports two display sizes:
-
-- `flagship` — 6 rows × 22 cols (the standard Vestaboard)
-- `note` — 3 rows × 15 cols (the smaller Vestaboard Note)
-
-The same flag data drives both — stripes are distributed proportionally across the available rows.
-
 ## Using Pride in Templates
 
-The simplest template fills the whole board with the active flag:
+The default templates already do the right thing — flagship demos use `{{pride.art}}`, note demos use `{{pride.art_note}}`. To pair the piece with its metadata:
 
 ```
-{{pride.art}}
-```
-
-To pair the flag with its name and tagline:
-
-```
-{{pride.flag_name}}
+{{pride.piece_name}}
 {{pride.tagline}}
 {{pride.art}}
 ```
 
-For history mode, the art already contains a rainbow banner + event text, but you can also reference the parts directly:
+For history mode:
 
 ```
 ON THIS DAY {{pride.history_year}}
@@ -116,13 +130,17 @@ ON THIS DAY {{pride.history_year}}
 
 ## Troubleshooting
 
-**The plugin renders a flat color.**
+**The piece never changes.**
 
-Some flags have very few stripes (`pan` has 3, `polyamory` has 3) and proportionally span multiple board rows each. That is by design.
+Make sure `selection` is set to something other than `pick`, and that `refresh_seconds` ≤ `rotate_seconds`. The framework only re-fetches every `refresh_seconds`.
+
+**The sparkle looks frozen.**
+
+Drop `refresh_seconds` to `30`. The alive sparkle mutates once per 30 seconds — if the framework only re-renders every 300 seconds, you'll see a 10-mutation jump every five minutes instead of a smooth crawl.
 
 **The message is cut off.**
 
-`message` is capped at 22 characters. Longer values are truncated to fit the flagship width.
+`message` is capped at 22 characters. Longer values are truncated.
 
 **No history shows up.**
 
@@ -138,4 +156,4 @@ The Vestaboard palette has 8 tiles (red, orange, yellow, green, blue, violet, wh
 python -m pytest tests/ -v
 ```
 
-The test suite covers every flag, both display sizes, rotation determinism, message overlay, and the history lookup. No network is touched.
+The test suite covers every piece at both display sizes, all four selection modes, pool filtering, message overlay, alive-sparkle behavior, and the history lookup. No network is touched.

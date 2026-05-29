@@ -1,14 +1,14 @@
 {
   "id": "pride",
   "name": "Pride",
-  "version": "0.1.0",
-  "description": "Rotating Pride flags, LGBTQ+ history, and rainbow color art for your split-flap display.",
+  "version": "0.2.0",
+  "description": "Pride flags, color patterns, hearts, and LGBTQ+ history for your split-flap display.",
   "author": "FiestaBoard Team",
   "repository": "https://github.com/Fiestaboard/fiestaboard-plugin--pride",
   "documentation": "README.md",
   "icon": "flag",
   "category": "art",
-  "min_refresh_seconds": 60,
+  "min_refresh_seconds": 30,
   "fiestaboard_version": ">=2.10.0",
   "settings_schema": {
     "type": "object",
@@ -21,67 +21,70 @@
       "mode": {
         "type": "string",
         "title": "Mode",
-        "description": "What to render: a Pride flag, or an 'On This Day' LGBTQ+ history fact.",
-        "enum": ["flag", "history"],
-        "default": "flag"
+        "description": "Render mode: 'art' (flags, patterns, hearts, symbols) or 'history' ('On This Day' LGBTQ+ fact).",
+        "enum": ["art", "history"],
+        "default": "art"
       },
-      "flag": {
+      "selection": {
         "type": "string",
-        "title": "Flag",
-        "description": "Which Pride flag to render. Use 'rotate' to cycle through all flags.",
-        "enum": [
-          "rotate",
-          "rainbow",
-          "trans",
-          "bi",
-          "pan",
-          "lesbian",
-          "ace",
-          "nonbinary",
-          "progress",
-          "intersex",
-          "leather",
-          "polyamory",
-          "genderfluid"
-        ],
+        "title": "Selection",
+        "description": "How to choose the piece in art mode. 'pick' uses the explicit piece setting; the others draw from the pool.",
+        "enum": ["pick", "rotate", "daily", "random"],
         "default": "rotate"
       },
-      "device_type": {
+      "piece": {
         "type": "string",
-        "title": "Device Type",
-        "description": "Target display size: flagship (6 rows x 22 cols) or note (3 rows x 15 cols).",
-        "enum": ["flagship", "note"],
-        "default": "flagship"
+        "title": "Piece",
+        "description": "Which piece to render when selection is 'pick'.",
+        "enum": [
+          "rainbow", "trans", "bi", "pan", "lesbian", "ace", "nonbinary",
+          "progress", "intersex", "leather", "polyamory", "genderfluid",
+          "rainbow_columns", "trans_columns", "bi_columns",
+          "rainbow_diagonal", "rainbow_checker", "rainbow_arc", "rainbow_sparkle",
+          "rainbow_heart",
+          "equality"
+        ],
+        "default": "rainbow"
+      },
+      "pool": {
+        "type": "array",
+        "title": "Pool",
+        "description": "Categories to draw from for rotate/daily/random. Leave empty to use every piece.",
+        "items": {
+          "type": "string",
+          "enum": ["flag", "pattern", "heart", "symbol"]
+        },
+        "default": []
       },
       "rotate_seconds": {
         "type": "integer",
         "title": "Rotation Interval (seconds)",
-        "description": "When flag is 'rotate', how often to switch flags (minimum 60).",
+        "description": "When selection is 'rotate', how often to switch pieces (minimum 60).",
         "default": 600,
         "minimum": 60
       },
       "message": {
         "type": "string",
         "title": "Custom Message",
-        "description": "Optional message laid over the active flag (centered). Leave empty for plain flag.",
+        "description": "Optional message laid over the active piece (centered). Leave empty for plain art.",
         "default": "",
         "maxLength": 22
       },
       "refresh_seconds": {
         "type": "integer",
         "title": "Refresh Interval (seconds)",
-        "description": "How often to recompute the rendered art (minimum 60).",
+        "description": "How often to recompute the rendered art. Use 30 for the alive Rainbow Sparkle to evolve smoothly.",
         "default": 300,
-        "minimum": 60
+        "minimum": 30
       }
     },
     "required": []
   },
   "env_vars": [
     {"name": "PRIDE_ENABLED", "required": false, "description": "Enable Pride plugin", "default": "false"},
-    {"name": "PRIDE_MODE", "required": false, "description": "Render mode: flag or history", "default": "flag"},
-    {"name": "PRIDE_FLAG", "required": false, "description": "Flag id or 'rotate'", "default": "rotate"},
-    {"name": "PRIDE_DEVICE_TYPE", "required": false, "description": "flagship or note", "default": "flagship"},
+    {"name": "PRIDE_MODE", "required": false, "description": "Render mode: art or history", "default": "art"},
+    {"name": "PRIDE_SELECTION", "required": false, "description": "Selection: pick, rotate, daily, random", "default": "rotate"},
+    {"name": "PRIDE_PIECE", "required": false, "description": "Piece id when selection is pick", "default": "rainbow"},
     {"name": "PRIDE_ROTATE_SECONDS", "required": false, "description": "Rotation interval in seconds", "default": "600"},
     {"name": "PRIDE_MESSAGE", "required": false, "description": "Custom message overlay", "default": ""},
     {"name": "PRIDE_REFRESH_SECONDS", "required": false, "description": "Refresh interval in seconds", "default": "300"}
@@ -94,32 +97,53 @@
     },
     "simple": {
       "art": {
-        "description": "Full-board color art for the active flag (or history banner)",
+        "description": "Full-board color art for the flagship (6x22) display",
         "type": "string",
         "max_length": 512,
         "group": "display",
         "example": "{red}{red}{red}..."
       },
-      "flag_name": {
-        "description": "Human-readable name of the active flag",
+      "art_note": {
+        "description": "Same active piece rendered for the note (3x15) display",
+        "type": "string",
+        "max_length": 256,
+        "group": "display",
+        "example": "{red}{red}{red}..."
+      },
+      "piece_id": {
+        "description": "Machine id of the active piece (e.g. rainbow, rainbow_heart)",
+        "type": "string",
+        "max_length": 32,
+        "group": "meta",
+        "example": "rainbow"
+      },
+      "piece_name": {
+        "description": "Human-readable name of the active piece",
         "type": "string",
         "max_length": 22,
         "group": "meta",
         "example": "Rainbow"
       },
+      "piece_category": {
+        "description": "Category of the active piece: flag, pattern, heart, symbol, history",
+        "type": "string",
+        "max_length": 10,
+        "group": "meta",
+        "example": "flag"
+      },
       "tagline": {
-        "description": "Short tagline associated with the active flag",
+        "description": "Short tagline associated with the active piece",
         "type": "string",
         "max_length": 22,
         "group": "meta",
         "example": "Love is love"
       },
       "mode": {
-        "description": "Current render mode (flag or history)",
+        "description": "Current render mode (art or history)",
         "type": "string",
         "max_length": 8,
         "group": "meta",
-        "example": "flag"
+        "example": "art"
       },
       "history_year": {
         "description": "Year of today's LGBTQ+ history entry, if any",
@@ -140,7 +164,7 @@
   "screenshots": [
     {
       "src": "docs/board-display.png",
-      "alt": "Pride flag displayed on a Vestaboard",
+      "alt": "Pride art displayed on a Vestaboard",
       "caption": "Rainbow Pride flag rendered on the flagship 6x22 display",
       "primary": true
     }
@@ -170,7 +194,7 @@
       "name": "Pride (Note)",
       "device_type": "note",
       "template": [
-        "{{pride.art}}",
+        "{{pride.art_note}}",
         "",
         ""
       ],

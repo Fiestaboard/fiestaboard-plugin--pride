@@ -9,12 +9,15 @@ def sample_manifest():
     return {
         "id": "pride",
         "name": "Pride",
-        "version": "0.1.0",
-        "description": "Pride flags and LGBTQ+ history for the board",
+        "version": "0.2.0",
+        "description": "Pride flags, patterns, hearts, and LGBTQ+ history for the board",
         "author": "FiestaBoard Team",
         "settings_schema": {},
         "variables": {
-            "simple": ["art", "flag_name", "tagline", "mode", "history_year", "history_text"]
+            "simple": [
+                "art", "art_note", "piece_id", "piece_name", "piece_category",
+                "tagline", "mode", "history_year", "history_text",
+            ]
         },
     }
 
@@ -24,9 +27,10 @@ def sample_config():
     """Default configuration matching the manifest defaults."""
     return {
         "enabled": True,
-        "mode": "flag",
-        "flag": "rainbow",
-        "device_type": "flagship",
+        "mode": "art",
+        "selection": "pick",
+        "piece": "rainbow",
+        "pool": [],
         "rotate_seconds": 600,
         "message": "",
         "refresh_seconds": 300,
