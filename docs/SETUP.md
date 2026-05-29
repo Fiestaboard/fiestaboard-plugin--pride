@@ -60,6 +60,7 @@ PRIDE_REFRESH_SECONDS=300
 | `leather` | Leather | flag |
 | `polyamory` | Polyamory | flag |
 | `genderfluid` | Genderfluid | flag |
+| `ally` | Ally | flag |
 | `rainbow_columns` | Rainbow Columns | pattern |
 | `trans_columns` | Trans Columns | pattern |
 | `bi_columns` | Bi Columns | pattern |

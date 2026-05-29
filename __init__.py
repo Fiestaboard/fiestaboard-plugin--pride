@@ -155,6 +155,12 @@ ART: Dict[str, Dict[str, Any]] = {
         "kind": "hstripes",
         "stripes": ["RED", "WHITE", "VIOLET", "BLACK", "BLUE"],
     },
+    "ally": {
+        "name": "Ally",
+        "tagline": "Stand together",
+        "category": "flag",
+        "kind": "ally",
+    },
     # -- vertical stripe variants ------------------------------------------
     "rainbow_columns": {
         "name": "Rainbow Columns",
@@ -385,6 +391,8 @@ class PridePlugin(PluginBase):
             return self._render_heart(rows, cols)
         if kind == "equality":
             return self._render_equality(rows, cols)
+        if kind == "ally":
+            return self._render_ally(rows, cols)
         raise ValueError(f"Unknown render kind: {kind}")
 
     @staticmethod
@@ -534,6 +542,29 @@ class PridePlugin(PluginBase):
             for c in range(margin):
                 grid[r][c] = blue
                 grid[r][cols - 1 - c] = blue
+        return grid
+
+    @staticmethod
+    def _render_ally(rows: int, cols: int) -> List[List[int]]:
+        """Straight Ally flag: alternating black/white stripes with a
+        centered rainbow pyramid widening top-to-bottom."""
+        K = _COLOR_CODE["BLACK"]
+        W = _COLOR_CODE["WHITE"]
+        # Choose enough spectrum bands for the available rows.
+        bands = SPECTRUM[:rows] if rows <= len(SPECTRUM) else (
+            SPECTRUM + [SPECTRUM[-1]] * (rows - len(SPECTRUM))
+        )
+        grid: List[List[int]] = []
+        for r in range(rows):
+            background = K if r % 2 == 0 else W
+            row = [background] * cols
+            # Pyramid widens by 2 tiles per row, narrowest on top.
+            band_width = min(cols, 2 * (r + 1))
+            margin = (cols - band_width) // 2
+            color = _COLOR_CODE[bands[r]]
+            for c in range(margin, margin + band_width):
+                row[c] = color
+            grid.append(row)
         return grid
 
     # --------------------------------------------------------- message overlay

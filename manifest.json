@@ -1,7 +1,7 @@
 {
   "id": "pride",
   "name": "Pride",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pride flags, color patterns, hearts, and LGBTQ+ history for your split-flap display.",
   "author": "FiestaBoard Team",
   "repository": "https://github.com/Fiestaboard/fiestaboard-plugin--pride",
@@ -38,7 +38,7 @@
         "description": "Which piece to render when selection is 'pick'.",
         "enum": [
           "rainbow", "trans", "bi", "pan", "lesbian", "ace", "nonbinary",
-          "progress", "intersex", "leather", "polyamory", "genderfluid",
+          "progress", "intersex", "leather", "polyamory", "genderfluid", "ally",
           "rainbow_columns", "trans_columns", "bi_columns",
           "rainbow_diagonal", "rainbow_checker", "rainbow_arc", "rainbow_sparkle",
           "rainbow_heart",

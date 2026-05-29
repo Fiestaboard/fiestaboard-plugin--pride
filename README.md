@@ -14,8 +14,8 @@ Both the flagship (6×22) and note (3×15) displays are supported automatically 
 
 ## Art Pieces
 
-### Flags (12)
-Rainbow, Trans, Bi, Pan, Lesbian, Ace, Non-binary, Progress, Intersex, Leather, Polyamory, Genderfluid.
+### Flags (13)
+Rainbow, Trans, Bi, Pan, Lesbian, Ace, Non-binary, Progress, Intersex, Leather, Polyamory, Genderfluid, Ally (black/white stripes with a centered rainbow pyramid).
 
 ### Patterns (7)
 - **Rainbow Columns / Trans Columns / Bi Columns** — vertical-stripe variants

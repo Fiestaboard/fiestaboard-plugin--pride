@@ -132,6 +132,17 @@ class TestPridePlugin:
         assert "{red}" in art
         assert "{violet}" in art
 
+    def test_ally_mixes_bw_stripes_with_rainbow_pyramid(self, sample_manifest, sample_config):
+        plugin = PridePlugin(sample_manifest)
+        plugin.config = {**sample_config, "selection": "pick", "piece": "ally"}
+        art = plugin.fetch_data().data["art"]
+        # Background should contain both black and white stripes
+        assert "{black}" in art
+        assert "{white}" in art
+        # Rainbow pyramid should contribute at least the apex (red) and base (violet)
+        assert "{red}" in art
+        assert "{violet}" in art
+
     def test_equality_uses_blue_and_yellow_only(self, sample_manifest, sample_config):
         plugin = PridePlugin(sample_manifest)
         plugin.config = {**sample_config, "selection": "pick", "piece": "equality"}
