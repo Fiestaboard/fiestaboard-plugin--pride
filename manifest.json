@@ -1,0 +1,184 @@
+{
+  "id": "pride",
+  "name": "Pride",
+  "version": "0.1.0",
+  "description": "Rotating Pride flags, LGBTQ+ history, and rainbow color art for your split-flap display.",
+  "author": "FiestaBoard Team",
+  "repository": "https://github.com/Fiestaboard/fiestaboard-plugin--pride",
+  "documentation": "README.md",
+  "icon": "flag",
+  "category": "art",
+  "min_refresh_seconds": 60,
+  "fiestaboard_version": ">=2.10.0",
+  "settings_schema": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "title": "Enable Pride",
+        "default": false
+      },
+      "mode": {
+        "type": "string",
+        "title": "Mode",
+        "description": "What to render: a Pride flag, or an 'On This Day' LGBTQ+ history fact.",
+        "enum": ["flag", "history"],
+        "default": "flag"
+      },
+      "flag": {
+        "type": "string",
+        "title": "Flag",
+        "description": "Which Pride flag to render. Use 'rotate' to cycle through all flags.",
+        "enum": [
+          "rotate",
+          "rainbow",
+          "trans",
+          "bi",
+          "pan",
+          "lesbian",
+          "ace",
+          "nonbinary",
+          "progress",
+          "intersex",
+          "leather",
+          "polyamory",
+          "genderfluid"
+        ],
+        "default": "rotate"
+      },
+      "device_type": {
+        "type": "string",
+        "title": "Device Type",
+        "description": "Target display size: flagship (6 rows x 22 cols) or note (3 rows x 15 cols).",
+        "enum": ["flagship", "note"],
+        "default": "flagship"
+      },
+      "rotate_seconds": {
+        "type": "integer",
+        "title": "Rotation Interval (seconds)",
+        "description": "When flag is 'rotate', how often to switch flags (minimum 60).",
+        "default": 600,
+        "minimum": 60
+      },
+      "message": {
+        "type": "string",
+        "title": "Custom Message",
+        "description": "Optional message laid over the active flag (centered). Leave empty for plain flag.",
+        "default": "",
+        "maxLength": 22
+      },
+      "refresh_seconds": {
+        "type": "integer",
+        "title": "Refresh Interval (seconds)",
+        "description": "How often to recompute the rendered art (minimum 60).",
+        "default": 300,
+        "minimum": 60
+      }
+    },
+    "required": []
+  },
+  "env_vars": [
+    {"name": "PRIDE_ENABLED", "required": false, "description": "Enable Pride plugin", "default": "false"},
+    {"name": "PRIDE_MODE", "required": false, "description": "Render mode: flag or history", "default": "flag"},
+    {"name": "PRIDE_FLAG", "required": false, "description": "Flag id or 'rotate'", "default": "rotate"},
+    {"name": "PRIDE_DEVICE_TYPE", "required": false, "description": "flagship or note", "default": "flagship"},
+    {"name": "PRIDE_ROTATE_SECONDS", "required": false, "description": "Rotation interval in seconds", "default": "600"},
+    {"name": "PRIDE_MESSAGE", "required": false, "description": "Custom message overlay", "default": ""},
+    {"name": "PRIDE_REFRESH_SECONDS", "required": false, "description": "Refresh interval in seconds", "default": "300"}
+  ],
+  "variables": {
+    "groups": {
+      "display": {"label": "Display"},
+      "meta": {"label": "Metadata"},
+      "history": {"label": "On This Day"}
+    },
+    "simple": {
+      "art": {
+        "description": "Full-board color art for the active flag (or history banner)",
+        "type": "string",
+        "max_length": 512,
+        "group": "display",
+        "example": "{red}{red}{red}..."
+      },
+      "flag_name": {
+        "description": "Human-readable name of the active flag",
+        "type": "string",
+        "max_length": 22,
+        "group": "meta",
+        "example": "Rainbow"
+      },
+      "tagline": {
+        "description": "Short tagline associated with the active flag",
+        "type": "string",
+        "max_length": 22,
+        "group": "meta",
+        "example": "Love is love"
+      },
+      "mode": {
+        "description": "Current render mode (flag or history)",
+        "type": "string",
+        "max_length": 8,
+        "group": "meta",
+        "example": "flag"
+      },
+      "history_year": {
+        "description": "Year of today's LGBTQ+ history entry, if any",
+        "type": "string",
+        "max_length": 4,
+        "group": "history",
+        "example": "1969"
+      },
+      "history_text": {
+        "description": "Text of today's LGBTQ+ history entry, if any",
+        "type": "string",
+        "max_length": 100,
+        "group": "history",
+        "example": "Stonewall Uprising begins in NYC"
+      }
+    }
+  },
+  "screenshots": [
+    {
+      "src": "docs/board-display.png",
+      "alt": "Pride flag displayed on a Vestaboard",
+      "caption": "Rainbow Pride flag rendered on the flagship 6x22 display",
+      "primary": true
+    }
+  ],
+  "demos": [
+    {
+      "name": "Pride (Flagship)",
+      "device_type": "flagship",
+      "template": [
+        "{{pride.art}}",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "line_metadata": [
+        {"alignment": "left", "wrap": true},
+        {"alignment": "left", "wrap": false},
+        {"alignment": "left", "wrap": false},
+        {"alignment": "left", "wrap": false},
+        {"alignment": "left", "wrap": false},
+        {"alignment": "left", "wrap": false}
+      ]
+    },
+    {
+      "name": "Pride (Note)",
+      "device_type": "note",
+      "template": [
+        "{{pride.art}}",
+        "",
+        ""
+      ],
+      "line_metadata": [
+        {"alignment": "left", "wrap": true},
+        {"alignment": "left", "wrap": false},
+        {"alignment": "left", "wrap": false}
+      ]
+    }
+  ]
+}
