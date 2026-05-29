@@ -279,10 +279,13 @@ class PridePlugin(PluginBase):
                 if cat not in CATEGORIES:
                     errors.append(f"Unknown category '{cat}'")
 
-        for key in ("rotate_seconds", "refresh_seconds"):
-            value = config.get(key, 60)
-            if not isinstance(value, int) or value < 60:
-                errors.append(f"{key} must be an integer >= 60")
+        rotate_value = config.get("rotate_seconds", 600)
+        if not isinstance(rotate_value, int) or rotate_value < 60:
+            errors.append("rotate_seconds must be an integer >= 60")
+
+        refresh_value = config.get("refresh_seconds", 300)
+        if not isinstance(refresh_value, int) or refresh_value < 30:
+            errors.append("refresh_seconds must be an integer >= 30")
 
         message = config.get("message", "") or ""
         if len(message) > 22:
