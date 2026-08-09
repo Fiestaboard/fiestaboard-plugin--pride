@@ -164,9 +164,49 @@
   "screenshots": [
     {
       "src": "docs/board-display.png",
-      "alt": "Pride art displayed on a Vestaboard",
-      "caption": "Rainbow Pride flag rendered on the flagship 6x22 display",
+      "alt": "Rainbow Pride flag on a Vestaboard",
+      "caption": "Rainbow Pride flag — six stripes from red to violet",
       "primary": true
+    },
+    {
+      "src": "docs/board-trans.png",
+      "alt": "Trans Pride flag on a Vestaboard",
+      "caption": "Trans Pride flag — blue / white / red / white / blue"
+    },
+    {
+      "src": "docs/board-progress.png",
+      "alt": "Progress Pride base flag on a Vestaboard",
+      "caption": "Progress Pride base flag (chevron overlays land in v0.3)"
+    },
+    {
+      "src": "docs/board-ally.png",
+      "alt": "Ally flag on a Vestaboard",
+      "caption": "Ally flag — black/white stripes with a centered rainbow pyramid"
+    },
+    {
+      "src": "docs/board-heart.png",
+      "alt": "Rainbow Heart on a Vestaboard",
+      "caption": "Rainbow Heart — red apex fading to violet point on black"
+    },
+    {
+      "src": "docs/board-diagonal.png",
+      "alt": "Rainbow diagonal pattern on a Vestaboard",
+      "caption": "Rainbow Diagonal — diagonal sweep across the spectrum"
+    },
+    {
+      "src": "docs/board-sparkle.png",
+      "alt": "Rainbow Sparkle on a Vestaboard",
+      "caption": "Rainbow Sparkle — slowly-evolving sparkle field, one tile per 30s"
+    },
+    {
+      "src": "docs/board-arc.png",
+      "alt": "Rainbow Arc pyramid on a Vestaboard",
+      "caption": "Rainbow Arc — centered pyramid bands, red on top"
+    },
+    {
+      "src": "docs/board-equality.png",
+      "alt": "Equality symbol on a Vestaboard",
+      "caption": "Equality — two yellow bars on a blue field"
     }
   ],
   "demos": [
