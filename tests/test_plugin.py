@@ -4,14 +4,50 @@ from unittest.mock import patch
 
 import pytest
 
+from src.devices import BoardContext
+from src.text_to_board import count_tiles
+
 from plugins.pride import (
     ART,
     CATEGORIES,
+    MAX_BOARD_COLS,
     ROTATION_ORDER,
     SPARKLE_MUTATION_SECONDS,
     PridePlugin,
+    _bands,
     _load_history,
 )
+
+# Every board shape the platform supports, as (rows, cols). A note array is
+# anything from 15x3 to 120x24; the tall-narrow and wide-short entries are the
+# two that break code assuming "not a Flagship means smaller".
+BOARD_SHAPES = [
+    ("flagship 22x6", 6, 22),
+    ("note 15x3", 3, 15),
+    ("panel 30x12", 12, 30),
+    ("tall-narrow 15x12", 12, 15),
+    ("wide-short 120x3", 3, 120),
+    ("max array 120x24", 24, 120),
+]
+
+
+def board_for(rows: int, cols: int) -> BoardContext:
+    """A BoardContext of the given size, as a note array where needed."""
+    if (rows, cols) == (6, 22):
+        return BoardContext.from_device_type("flagship")
+    if (rows, cols) == (3, 15):
+        return BoardContext.from_device_type("note")
+    return BoardContext(device_type="note_array", rows=rows, cols=cols)
+
+
+def render(plugin, rows, cols):
+    """Render *plugin* for a board of this size, bypassing the per-board cache.
+
+    Used where a test re-renders one instance with a changing config, which
+    ``get_data`` would legitimately serve from its geometry-keyed cache.
+    """
+    with plugin._bound_board(board_for(rows, cols)):
+        return plugin.fetch_data()
 
 
 class TestPridePlugin:
@@ -63,20 +99,40 @@ class TestPridePlugin:
 
     def test_validate_config_rejects_long_message(self, sample_manifest):
         plugin = PridePlugin(sample_manifest)
-        errors = plugin.validate_config({"message": "x" * 30})
+        errors = plugin.validate_config({"message": "x" * (MAX_BOARD_COLS + 1)})
         assert any("message" in e.lower() for e in errors)
 
-    # ------------------------------------------- both sizes always published
+    def test_validate_config_accepts_a_message_as_wide_as_the_widest_board(
+        self, sample_manifest
+    ):
+        """The cap is the widest board a user can own, not the Flagship's 22."""
+        plugin = PridePlugin(sample_manifest)
+        assert plugin.validate_config({"message": "x" * MAX_BOARD_COLS}) == []
 
-    def test_each_fetch_publishes_both_sizes(self, sample_manifest, sample_config):
+    # ----------------------------------------------- art is always board-sized
+
+    @pytest.mark.parametrize("label,rows,cols", BOARD_SHAPES)
+    def test_art_is_exactly_board_sized(
+        self, sample_manifest, sample_config, label, rows, cols
+    ):
         plugin = PridePlugin(sample_manifest)
         plugin.config = {**sample_config, "selection": "pick", "piece": "rainbow"}
-        result = plugin.fetch_data()
-        assert result.available
-        flagship_rows = result.data["art"].split("\n")
-        note_rows = result.data["art_note"].split("\n")
-        assert len(flagship_rows) == 6
-        assert len(note_rows) == 3
+        result = plugin.get_data(board_for(rows, cols))
+        assert result.available, label
+        lines = result.data["art"].split("\n")
+        assert len(lines) == rows, label
+        assert all(count_tiles(line) == cols for line in lines), label
+        # formatted_lines is the live whole-board path and must agree.
+        assert result.formatted_lines == lines, label
+
+    def test_art_defaults_to_flagship_with_no_board_bound(
+        self, sample_manifest, sample_config
+    ):
+        plugin = PridePlugin(sample_manifest)
+        plugin.config = {**sample_config, "selection": "pick", "piece": "rainbow"}
+        lines = plugin.get_data(None).data["art"].split("\n")
+        assert len(lines) == 6
+        assert all(count_tiles(line) == 22 for line in lines)
 
     def test_rainbow_flagship_has_six_distinct_color_rows(self, sample_manifest, sample_config):
         plugin = PridePlugin(sample_manifest)
@@ -87,7 +143,10 @@ class TestPridePlugin:
         for row, marker in zip(rows, expected):
             assert row == marker * 22
 
-    def test_every_piece_renders_at_both_sizes(self, sample_manifest, sample_config):
+    @pytest.mark.parametrize("label,rows,cols", BOARD_SHAPES)
+    def test_every_piece_renders_at_every_board_shape(
+        self, sample_manifest, sample_config, label, rows, cols
+    ):
         plugin = PridePlugin(sample_manifest)
         # Pin the wall clock so the time-evolving pieces produce a stable result.
         with patch("plugins.pride.time.time", return_value=1_700_000_000):
@@ -95,13 +154,65 @@ class TestPridePlugin:
                 plugin.config = {
                     **sample_config, "selection": "pick", "piece": piece_id,
                 }
-                result = plugin.fetch_data()
-                assert result.available, piece_id
-                assert len(result.data["art"].split("\n")) == 6, piece_id
-                assert len(result.data["art_note"].split("\n")) == 3, piece_id
+                result = render(plugin, rows, cols)
+                assert result.available, (piece_id, label)
+                lines = result.data["art"].split("\n")
+                assert len(lines) == rows, (piece_id, label)
+                assert all(count_tiles(line) == cols for line in lines), (
+                    piece_id, label,
+                )
                 assert result.data["piece_id"] == piece_id
                 assert result.data["piece_name"] == ART[piece_id]["name"]
                 assert result.data["piece_category"] == ART[piece_id]["category"]
+
+    # ---------------------------------------- no flag ever loses a stripe
+
+    # Every flag whose stripe count exceeds a Note's three rows. These are the
+    # flags the old nearest-neighbour downsample silently mangled: Leather came
+    # out as three identical BLACK rows (a solid black board), Trans lost its
+    # red centre, Bisexual lost the violet stripe that defines it.
+    MULTI_STRIPE_FLAGS = [
+        pid for pid, piece in ART.items()
+        if piece.get("stripes") and len(piece["stripes"]) > 3
+    ]
+
+    @pytest.mark.parametrize("piece_id", MULTI_STRIPE_FLAGS)
+    @pytest.mark.parametrize("label,rows,cols", BOARD_SHAPES)
+    def test_every_stripe_survives_on_every_board(
+        self, sample_manifest, sample_config, piece_id, label, rows, cols
+    ):
+        plugin = PridePlugin(sample_manifest)
+        plugin.config = {**sample_config, "selection": "pick", "piece": piece_id}
+        art = render(plugin, rows, cols).data["art"]
+        for color in set(ART[piece_id]["stripes"]):
+            marker = "{%s}" % color.lower()
+            assert marker in art, (
+                f"{piece_id} lost its {color} stripe on {label}: "
+                f"{len(set(ART[piece_id]['stripes']))} colors expected, "
+                f"got {sorted(set(m for m in art.split()))[:1]}"
+            )
+
+    def test_leather_flag_is_not_a_solid_black_board_on_a_note(
+        self, sample_manifest, sample_config
+    ):
+        """The specific regression: 6 stripes floor-sampled into 3 rows."""
+        plugin = PridePlugin(sample_manifest)
+        plugin.config = {**sample_config, "selection": "pick", "piece": "leather"}
+        art = render(plugin, 3, 15).data["art"]
+        assert art.count("{black}") < 45, art
+        assert "{blue}" in art and "{white}" in art
+
+    def test_bands_never_drop_a_stripe_when_there_is_room(self):
+        for n in range(1, 9):
+            for extent in range(n, 121):
+                bands = _bands(n, extent)
+                assert len(bands) == extent, (n, extent)
+                assert set(bands) == set(range(n)), (n, extent)
+
+    def test_bands_spread_the_selection_when_there_is_not_room(self):
+        """Fewer bands than stripes: sample centres, not the front of the list."""
+        assert _bands(6, 3) == [1, 3, 5]
+        assert _bands(5, 2) == [1, 3]
 
     def test_vertical_stripes_use_column_distribution(self, sample_manifest, sample_config):
         plugin = PridePlugin(sample_manifest)
@@ -311,15 +422,32 @@ class TestPridePlugin:
         assert "HELLO" in center
         assert center.count("{green}") < 22
 
-    def test_message_overlays_apply_to_both_sizes(self, sample_manifest, sample_config):
+    @pytest.mark.parametrize("label,rows,cols", BOARD_SHAPES)
+    def test_message_overlays_on_every_board(
+        self, sample_manifest, sample_config, label, rows, cols
+    ):
         plugin = PridePlugin(sample_manifest)
         plugin.config = {
             **sample_config, "selection": "pick", "piece": "rainbow",
             "message": "HI",
         }
-        result = plugin.fetch_data()
-        assert "HI" in result.data["art"]
-        assert "HI" in result.data["art_note"]
+        assert "HI" in render(plugin, rows, cols).data["art"], label
+
+    def test_long_message_reflows_onto_more_rows_on_a_narrow_board(
+        self, sample_manifest, sample_config
+    ):
+        """A message too wide for the board wraps rather than being clipped."""
+        plugin = PridePlugin(sample_manifest)
+        plugin.config = {
+            **sample_config, "selection": "pick", "piece": "rainbow",
+            "message": "HAPPY PRIDE EVERYONE",
+        }
+        note_rows = render(plugin, 3, 15).data["art"].split("\n")
+        with_text = [r for r in note_rows if "HAPPY" in r or "PRIDE" in r or "EVERYONE" in r]
+        assert len(with_text) >= 2, note_rows
+        # The same message fits on one row of a wide board.
+        wide_rows = render(plugin, 3, 120).data["art"].split("\n")
+        assert any("HAPPY PRIDE EVERYONE" in r for r in wide_rows), wide_rows
 
     # ---------------------------------------------------------- history mode
 
@@ -348,7 +476,10 @@ class TestPridePlugin:
         assert result.data["mode"] == "history"
         assert "STONEWALL" in result.data["art"].upper() or "1969" in result.data["art"]
 
-    def test_history_publishes_both_sizes(self, sample_manifest, sample_config):
+    @pytest.mark.parametrize("label,rows,cols", BOARD_SHAPES)
+    def test_history_is_board_sized(
+        self, sample_manifest, sample_config, label, rows, cols
+    ):
         from datetime import datetime as real_dt
 
         plugin = PridePlugin(sample_manifest)
@@ -360,9 +491,57 @@ class TestPridePlugin:
                 return real_dt(2026, 6, 28, 12, 0, 0)
 
         with patch("plugins.pride.datetime", _FakeDt):
-            result = plugin.fetch_data()
-        assert len(result.data["art"].split("\n")) == 6
-        assert len(result.data["art_note"].split("\n")) == 3
+            result = render(plugin, rows, cols)
+        lines = result.data["art"].split("\n")
+        assert len(lines) == rows, label
+        assert all(count_tiles(line) == cols for line in lines), label
+
+    def test_history_wraps_into_more_lines_on_a_taller_board(
+        self, sample_manifest, sample_config
+    ):
+        """A taller board shows more of the entry, not the same five lines."""
+        from datetime import datetime as real_dt
+
+        plugin = PridePlugin(sample_manifest)
+        plugin.config = {**sample_config, "mode": "history"}
+
+        class _FakeDt:
+            @classmethod
+            def now(cls):
+                return real_dt(2026, 6, 28, 12, 0, 0)
+
+        with patch("plugins.pride.datetime", _FakeDt):
+            short = render(plugin, 3, 15).data["art"]
+            tall = render(plugin, 24, 15).data["art"]
+        assert len(tall.replace(" ", "")) > len(short.replace(" ", ""))
+
+    # ------------------------------------------------- manifest is honest
+
+    def test_manifest_max_lengths_cover_every_history_entry(self):
+        import json
+        from pathlib import Path
+
+        manifest = json.loads(
+            (Path(__file__).resolve().parent.parent / "manifest.json").read_text()
+        )
+        declared = manifest["max_lengths"]
+        for entry in _load_history():
+            assert len(entry.get("text", "")) <= declared["history_text"], entry
+            assert len(str(entry.get("year", ""))) <= declared["history_year"], entry
+
+    def test_manifest_max_lengths_cover_every_piece(self):
+        import json
+        from pathlib import Path
+
+        manifest = json.loads(
+            (Path(__file__).resolve().parent.parent / "manifest.json").read_text()
+        )
+        declared = manifest["max_lengths"]
+        for piece_id, piece in ART.items():
+            assert len(piece_id) <= declared["piece_id"], piece_id
+            assert len(piece["name"]) <= declared["piece_name"], piece_id
+            assert len(piece["tagline"]) <= declared["tagline"], piece_id
+            assert len(piece["category"]) <= declared["piece_category"], piece_id
 
     def test_history_fallback_when_no_entry(self, sample_manifest, sample_config):
         from datetime import datetime as real_dt
