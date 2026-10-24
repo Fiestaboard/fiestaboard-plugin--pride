@@ -11,7 +11,7 @@ The Pride plugin renders Pride flags, color patterns, hearts, and an LGBTQ+ hist
 - Optionally restricts the candidate pool to flags / patterns / hearts / symbols
 - Overlays a 22-character message centered on the active piece
 - Surfaces an "On This Day" LGBTQ+ history fact when in history mode
-- Publishes both flagship (6×22) and note (3×15) renders every fetch, as separate template variables — no device setting required
+- Publishes one `{{pride.art}}` render per fetch, drawn to the exact size of the board it lands on — Flagship (22×6), Note (15×3), or any note array up to 120×24 — so no device setting is required and one config serves every board
 
 **Prerequisites:**
 
@@ -100,21 +100,21 @@ To see it evolve smoothly, set `refresh_seconds` to `30` (the minimum the manife
 
 ### 6. (Optional) Add a Custom Message
 
-Set `message` to any string up to 22 characters. It's uppercased and centered on the middle row of whichever piece is active.
+Set `message` to any string up to 120 characters (the width of the widest board). It's uppercased and centered on whichever piece is active, reflowed to the board's width — so a message too long for one row of a Note takes two.
 
 ### 7. (Optional) Switch to History Mode
 
 Set `mode = history`. The plugin will:
 
 1. Look up today's date in `data/history.json`.
-2. If an event matches, render a rainbow stripe on the top row and wrap the year + event text across the remaining rows.
+2. If an event matches, render a rainbow band framing the year + event text, wrapped and centered. Both the band depth and the number of text lines scale with the board, so a taller board shows more of the entry.
 3. If nothing matches, fall back to a rainbow flag with `HAPPY PRIDE` overlaid.
 
 History mode also exposes `{{pride.history_year}}` and `{{pride.history_text}}` so you can compose your own layouts in other templates.
 
 ## Using Pride in Templates
 
-The default templates already do the right thing — flagship demos use `{{pride.art}}`, note demos use `{{pride.art_note}}`. To pair the piece with its metadata:
+The default templates already do the right thing — every demo uses `{{pride.art}}`, which arrives already sized to the board. To pair the piece with its metadata:
 
 ```
 {{pride.piece_name}}
@@ -141,7 +141,7 @@ Drop `refresh_seconds` to `30`. The alive sparkle mutates once per 30 seconds �
 
 **The message is cut off.**
 
-`message` is capped at 22 characters. Longer values are truncated.
+`message` is capped at 120 characters — the width of the widest board. It is reflowed to the board's width, and anything past the last row of the board is dropped.
 
 **No history shows up.**
 

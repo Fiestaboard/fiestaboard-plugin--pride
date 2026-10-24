@@ -9,13 +9,13 @@ def sample_manifest():
     return {
         "id": "pride",
         "name": "Pride",
-        "version": "0.2.0",
+        "version": "0.2.2",
         "description": "Pride flags, patterns, hearts, and LGBTQ+ history for the board",
         "author": "FiestaBoard Team",
         "settings_schema": {},
         "variables": {
             "simple": [
-                "art", "art_note", "piece_id", "piece_name", "piece_category",
+                "art", "piece_id", "piece_name", "piece_category",
                 "tagline", "mode", "history_year", "history_text",
             ]
         },

@@ -1,7 +1,7 @@
 {
   "id": "pride",
   "name": "Pride",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Pride flags, color patterns, hearts, and LGBTQ+ history for your split-flap display.",
   "author": "FiestaBoard Team",
   "repository": "https://github.com/Fiestaboard/fiestaboard-plugin--pride",
@@ -22,14 +22,22 @@
         "type": "string",
         "title": "Mode",
         "description": "Render mode: 'art' (flags, patterns, hearts, symbols) or 'history' ('On This Day' LGBTQ+ fact).",
-        "enum": ["art", "history"],
+        "enum": [
+          "art",
+          "history"
+        ],
         "default": "art"
       },
       "selection": {
         "type": "string",
         "title": "Selection",
         "description": "How to choose the piece in art mode. 'pick' uses the explicit piece setting; the others draw from the pool.",
-        "enum": ["pick", "rotate", "daily", "random"],
+        "enum": [
+          "pick",
+          "rotate",
+          "daily",
+          "random"
+        ],
         "default": "rotate"
       },
       "piece": {
@@ -37,10 +45,26 @@
         "title": "Piece",
         "description": "Which piece to render when selection is 'pick'.",
         "enum": [
-          "rainbow", "trans", "bi", "pan", "lesbian", "ace", "nonbinary",
-          "progress", "intersex", "leather", "polyamory", "genderfluid", "ally",
-          "rainbow_columns", "trans_columns", "bi_columns",
-          "rainbow_diagonal", "rainbow_checker", "rainbow_arc", "rainbow_sparkle",
+          "rainbow",
+          "trans",
+          "bi",
+          "pan",
+          "lesbian",
+          "ace",
+          "nonbinary",
+          "progress",
+          "intersex",
+          "leather",
+          "polyamory",
+          "genderfluid",
+          "ally",
+          "rainbow_columns",
+          "trans_columns",
+          "bi_columns",
+          "rainbow_diagonal",
+          "rainbow_checker",
+          "rainbow_arc",
+          "rainbow_sparkle",
           "rainbow_heart",
           "equality"
         ],
@@ -52,7 +76,12 @@
         "description": "Categories to draw from for rotate/daily/random. Leave empty to use every piece.",
         "items": {
           "type": "string",
-          "enum": ["flag", "pattern", "heart", "symbol"]
+          "enum": [
+            "flag",
+            "pattern",
+            "heart",
+            "symbol"
+          ]
         },
         "default": []
       },
@@ -66,9 +95,9 @@
       "message": {
         "type": "string",
         "title": "Custom Message",
-        "description": "Optional message laid over the active piece (centered). Leave empty for plain art.",
+        "description": "Optional message laid over the active piece (centered). It is reflowed to the width of whichever board it lands on, so it may occupy more than one row on a narrow board. Leave empty for plain art.",
         "default": "",
-        "maxLength": 22
+        "maxLength": 120
       },
       "refresh_seconds": {
         "type": "integer",
@@ -81,67 +110,101 @@
     "required": []
   },
   "env_vars": [
-    {"name": "PRIDE_ENABLED", "required": false, "description": "Enable Pride plugin", "default": "false"},
-    {"name": "PRIDE_MODE", "required": false, "description": "Render mode: art or history", "default": "art"},
-    {"name": "PRIDE_SELECTION", "required": false, "description": "Selection: pick, rotate, daily, random", "default": "rotate"},
-    {"name": "PRIDE_PIECE", "required": false, "description": "Piece id when selection is pick", "default": "rainbow"},
-    {"name": "PRIDE_ROTATE_SECONDS", "required": false, "description": "Rotation interval in seconds", "default": "600"},
-    {"name": "PRIDE_MESSAGE", "required": false, "description": "Custom message overlay", "default": ""},
-    {"name": "PRIDE_REFRESH_SECONDS", "required": false, "description": "Refresh interval in seconds", "default": "300"}
+    {
+      "name": "PRIDE_ENABLED",
+      "required": false,
+      "description": "Enable Pride plugin",
+      "default": "false"
+    },
+    {
+      "name": "PRIDE_MODE",
+      "required": false,
+      "description": "Render mode: art or history",
+      "default": "art"
+    },
+    {
+      "name": "PRIDE_SELECTION",
+      "required": false,
+      "description": "Selection: pick, rotate, daily, random",
+      "default": "rotate"
+    },
+    {
+      "name": "PRIDE_PIECE",
+      "required": false,
+      "description": "Piece id when selection is pick",
+      "default": "rainbow"
+    },
+    {
+      "name": "PRIDE_ROTATE_SECONDS",
+      "required": false,
+      "description": "Rotation interval in seconds",
+      "default": "600"
+    },
+    {
+      "name": "PRIDE_MESSAGE",
+      "required": false,
+      "description": "Custom message overlay",
+      "default": ""
+    },
+    {
+      "name": "PRIDE_REFRESH_SECONDS",
+      "required": false,
+      "description": "Refresh interval in seconds",
+      "default": "300"
+    }
   ],
   "variables": {
     "groups": {
-      "display": {"label": "Display"},
-      "meta": {"label": "Metadata"},
-      "history": {"label": "On This Day"}
+      "display": {
+        "label": "Display"
+      },
+      "meta": {
+        "label": "Metadata"
+      },
+      "history": {
+        "label": "On This Day"
+      }
     },
     "simple": {
       "art": {
-        "description": "Full-board color art for the flagship (6x22) display",
+        "description": "Full-board color art, rendered to the exact dimensions of the board it is displayed on (22x6 Flagship, 15x3 Note, or any note array up to 120x24)",
         "type": "string",
-        "max_length": 512,
-        "group": "display",
-        "example": "{red}{red}{red}..."
-      },
-      "art_note": {
-        "description": "Same active piece rendered for the note (3x15) display",
-        "type": "string",
-        "max_length": 256,
+        "max_length": 2903,
         "group": "display",
         "example": "{red}{red}{red}..."
       },
       "piece_id": {
         "description": "Machine id of the active piece (e.g. rainbow, rainbow_heart)",
         "type": "string",
-        "max_length": 32,
+        "max_length": 16,
         "group": "meta",
         "example": "rainbow"
       },
       "piece_name": {
         "description": "Human-readable name of the active piece",
         "type": "string",
-        "max_length": 22,
+        "max_length": 16,
         "group": "meta",
         "example": "Rainbow"
       },
       "piece_category": {
         "description": "Category of the active piece: flag, pattern, heart, symbol, history",
         "type": "string",
-        "max_length": 10,
+        "max_length": 7,
         "group": "meta",
         "example": "flag"
       },
       "tagline": {
         "description": "Short tagline associated with the active piece",
         "type": "string",
-        "max_length": 22,
+        "max_length": 21,
         "group": "meta",
         "example": "Love is love"
       },
       "mode": {
         "description": "Current render mode (art or history)",
         "type": "string",
-        "max_length": 8,
+        "max_length": 7,
         "group": "meta",
         "example": "art"
       },
@@ -155,11 +218,21 @@
       "history_text": {
         "description": "Text of today's LGBTQ+ history entry, if any",
         "type": "string",
-        "max_length": 100,
+        "max_length": 114,
         "group": "history",
         "example": "Stonewall Uprising begins in NYC"
       }
     }
+  },
+  "max_lengths": {
+    "art": 2903,
+    "piece_id": 16,
+    "piece_name": 16,
+    "piece_category": 7,
+    "tagline": 21,
+    "mode": 7,
+    "history_year": 4,
+    "history_text": 114
   },
   "screenshots": [
     {
@@ -209,6 +282,43 @@
       "caption": "Equality — two yellow bars on a blue field"
     }
   ],
+  "previews": [
+    {
+      "label": "Flagship",
+      "device_type": "flagship",
+      "rows": [
+        "{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}{red}",
+        "{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}{orange}",
+        "{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}",
+        "{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}",
+        "{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}",
+        "{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}"
+      ]
+    },
+    {
+      "label": "Note",
+      "device_type": "note",
+      "rows": [
+        "{red}{red}{orange}{orange}{orange}{yellow}{yellow}{yellow}{green}{green}{blue}{blue}{violet}{violet}{violet}",
+        "{red}{red}{orange}{orange}{orange}{yellow}{yellow}{yellow}{green}{green}{blue}{blue}{violet}{violet}{violet}",
+        "{red}{red}{orange}{orange}{orange}{yellow}{yellow}{yellow}{green}{green}{blue}{blue}{violet}{violet}{violet}"
+      ]
+    },
+    {
+      "label": "Note Array (2 wide x 2 tall)",
+      "device_type": "note_array",
+      "notes_wide": 2,
+      "notes_tall": 2,
+      "rows": [
+        "{black}{black}{black}{black}{black}{black}{black}{black}{red}{red}{red}{black}{black}{black}{black}{black}{black}{black}{black}{red}{red}{red}{black}{black}{black}{black}{black}{black}{black}{black}",
+        "{black}{black}{black}{black}{black}{black}{black}{orange}{orange}{orange}{orange}{orange}{black}{black}{black}{black}{black}{black}{orange}{orange}{orange}{orange}{orange}{black}{black}{black}{black}{black}{black}{black}",
+        "{black}{black}{black}{black}{black}{black}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{yellow}{black}{black}{black}{black}{black}{black}",
+        "{black}{black}{black}{black}{black}{black}{black}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{green}{black}{black}{black}{black}{black}{black}{black}",
+        "{black}{black}{black}{black}{black}{black}{black}{black}{black}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{blue}{black}{black}{black}{black}{black}{black}{black}{black}{black}",
+        "{black}{black}{black}{black}{black}{black}{black}{black}{black}{black}{black}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{violet}{black}{black}{black}{black}{black}{black}{black}{black}{black}{black}{black}"
+      ]
+    }
+  ],
   "demos": [
     {
       "name": "Pride (Flagship)",
@@ -222,26 +332,53 @@
         ""
       ],
       "line_metadata": [
-        {"alignment": "left", "wrap": true},
-        {"alignment": "left", "wrap": false},
-        {"alignment": "left", "wrap": false},
-        {"alignment": "left", "wrap": false},
-        {"alignment": "left", "wrap": false},
-        {"alignment": "left", "wrap": false}
+        {
+          "alignment": "left",
+          "wrap": true
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        }
       ]
     },
     {
       "name": "Pride (Note)",
       "device_type": "note",
       "template": [
-        "{{pride.art_note}}",
+        "{{pride.art}}",
         "",
         ""
       ],
       "line_metadata": [
-        {"alignment": "left", "wrap": true},
-        {"alignment": "left", "wrap": false},
-        {"alignment": "left", "wrap": false}
+        {
+          "alignment": "left",
+          "wrap": true
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        },
+        {
+          "alignment": "left",
+          "wrap": false
+        }
       ]
     }
   ]
